@@ -1,0 +1,45 @@
+int fa[maxn],rnk[maxn];
+
+struct node{
+    int id,fa,rnk;
+    node(){}
+    node(int a,int b,int c){
+        id=a,fa=b,rnk=c;
+    }
+};
+stack<node> sta;
+int F(int x){
+    if(fa[x]==x)return x;
+    return F(fa[x]);
+}
+
+void uni(int x,int y){
+    int fx=F(x),fy=F(y);
+    if(fx==fy){
+        sta.push(node(0,fa[0],rnk[0]));
+        fa[0]=1;
+        return;
+    }
+    if(rnk[fx]==rnk[fy]){
+        sta.push(node(fx,fa[fx],rnk[fx]));
+        sta.push(node(fy,fa[fy],rnk[fy]));
+        rnk[fx]++;
+        fa[fy]=fx;
+    }
+    else if(rnk[fx]>rnk[fy]){
+        sta.push(node(fy,fa[fy],rnk[fy]));
+        fa[fy]=fx;
+    }
+    else{
+        sta.push(node(fx,fa[fx],rnk[fx]));
+        fa[fx]=fy;
+    }
+}
+
+void revert(int time){
+    while(sta.size()>time){
+        node cnt=sta.top();sta.pop();
+        fa[cnt.id]=cnt.fa;
+        rnk[cnt.id]=cnt.rnk;
+    }
+}

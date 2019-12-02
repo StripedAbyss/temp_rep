@@ -1,0 +1,176 @@
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+typedef pair<int,int> pii;
+typedef unsigned long long ull;
+#define fi first
+#define se second
+#define mp make_pair
+#define pb push_back
+#define mem(a) memset(a,0,sizeof(a))
+#define lson (u<<1)
+#define rson (u<<1|1)
+#define lc c[x][0]
+#define rc c[x][1]
+#define ls(x) t[x].c[0]
+#define rs(x) t[x].c[1]
+const int maxn=1e5+15;
+const int mod=1e9+7;
+const int inf=0x3f3f3f3f;
+int n,m;
+
+struct node{
+    int c[2],siz,val,key;
+    int mx,mi,vv;
+    ll sum;
+}t[maxn];
+int lazyf[maxn],lazya[maxn];
+int tot;
+
+inline void push_up(int u){
+    t[u].siz=t[ls(u)].siz+t[rs(u)].siz+1;
+    t[u].sum=t[ls(u)].sum+t[rs(u)].sum+t[u].vv;
+    t[u].mx=max(t[u].vv,max(t[ls(u)].mx,t[rs(u)].mx));
+    t[u].mi=min(t[u].vv,min(t[ls(u)].mi,t[rs(u)].mi));
+}
+
+inline void push_down(int rt){
+    if(lazya[rt]){
+        if(ls(rt)){
+            lazya[ls(rt)]+=lazya[rt];
+            t[ls(rt)].sum+=(ll)t[ls(rt)].siz*lazya[rt];
+            t[ls(rt)].vv+=lazya[rt];t[ls(rt)].mx+=lazya[rt];t[ls(rt)].mi+=lazya[rt];
+        }
+        if(rs(rt)){
+            lazya[rs(rt)]+=lazya[rt];
+            t[rs(rt)].sum+=(ll)t[rs(rt)].siz*lazya[rt];
+            t[rs(rt)].vv+=lazya[rt];t[rs(rt)].mx+=lazya[rt];t[rs(rt)].mi+=lazya[rt];
+        }
+        lazya[rt]=0;
+    }
+    if(lazyf[rt]){
+        swap(ls(rt),rs(rt));
+        if(ls(rt))lazyf[ls(rt)]^=1;
+        if(rs(rt))lazyf[rs(rt)]^=1;
+        lazyf[rt]^=1;
+    }
+}
+
+void split(int rt,int &x,int &y,int val){
+    if(!rt){
+        x=y=0;
+        return;
+    }
+    push_down(rt);
+    int xx=t[ls(rt)].siz+1;
+    if(xx<=val)x=rt,split(rs(rt),rs(x),y,val-xx);
+    else y=rt,split(ls(rt),x,ls(y),val);
+    push_up(rt);
+}
+
+void merg(int &rt,int x,int y){
+    if(x==0||y==0){rt=x+y;return;}
+    if(t[x].key<t[y].key)push_down(x),rt=x,merg(rs(rt),rs(x),y);
+    else push_down(y),rt=y,merg(ls(rt),x,ls(y));
+    push_up(rt);
+}
+
+inline void ins(int &rt,int val,int vv){
+    int x=0,y=0,z=++tot;
+    t[z].val=val,t[z].siz=1,t[z].key=rand();
+    t[z].sum=t[z].vv=t[z].mx=t[z].mi=vv;
+    lazya[z]=lazyf[z]=0;
+    t[z].c[0]=t[z].c[1]=0;
+    split(rt,x,y,val);
+    merg(x,x,z);
+    merg(rt,x,y);
+}
+
+ll retsum=0;
+int retmx,retmi;
+void ret_init(){
+    retsum=0;
+    retmx=-inf;
+    retmi=inf;
+}
+
+void upd(int id){
+    retsum+=t[id].sum;
+    retmx=max(t[id].mx,retmx);
+    retmi=min(t[id].mi,retmi);
+}
+
+inline void query(int &rt,int l,int r){
+    int x=0,y=0,z=0;
+    split(rt,x,y,l-1);
+    split(y,y,z,r-l+1);
+    upd(y);
+    merg(y,y,z);
+    merg(rt,x,y);
+}
+
+void workadd(int &rt,int l,int r,int v){
+    int x=0,y=0,z=0;
+    split(rt,x,y,l-1);
+    split(y,y,z,r-l+1);
+    lazya[y]+=v;
+    t[y].sum+=(ll)v*t[y].siz;t[y].vv+=v;
+    t[y].mx+=v;t[y].mi+=v;
+    merg(y,y,z);
+    merg(rt,x,y);
+}
+
+void workrev(int &rt,int l,int r){
+    int x=0,y=0,z=0;
+    split(rt,x,y,l-1);
+    split(y,y,z,r-l+1);
+    lazyf[y]^=1;
+    merg(y,y,z);
+    merg(rt,x,y);
+}
+
+
+char op[10];
+int main(){
+    srand(19260817);
+    scanf("%d",&n);
+    int rt=0;
+    t[0].sum=0,t[0].mx=-inf,t[0].mi=inf;
+    for(int i=1,a;i<=n;i++){
+        scanf("%d",&a);
+        ins(rt,i,a);
+    }
+    scanf("%d",&m);
+    int a,b,c;
+    while(m--){
+        scanf("%s",op);
+        if(op[0]=='c'){
+            scanf("%d%d%d",&a,&b,&c);
+            workadd(rt,a,b,c);
+        }
+        else if(op[0]=='r'){
+            scanf("%d%d",&a,&b);
+            workrev(rt,a,b);
+        }
+        else{
+            scanf("%d%d",&a,&b);
+            ret_init();
+            query(rt,a,b);
+            printf("%lld %d %d\n",retsum,retmi,retmx);
+        }
+    }
+    return 0;
+}
+
+
+/*
+5
+1 2 3 4 5
+5
+c 2 3 1
+q 2 3
+r 1 4
+q 2 3
+q 1 5
+*/
+

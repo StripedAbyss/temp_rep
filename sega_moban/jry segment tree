@@ -1,0 +1,78 @@
+#include <bits/stdc++.h>
+typedef long long ll;
+using namespace std;
+const int maxn=1e5+50;
+int n,m;
+int mi[maxn*4],se[maxn*4],tag[maxn*4],mic[maxn*4];
+ll sum[maxn*4];
+
+inline void upt(int u) {
+    int lc=u<<1,rc=lc|1;
+    sum[u]=sum[lc]+sum[rc];
+    if(mi[lc]==mi[rc]) {
+        mi[u]=mi[lc];
+        mic[u]=mic[lc]+mic[rc];
+        se[u]=min(se[lc],se[rc]);
+    } else {
+        if(mi[lc]>mi[rc]) swap(lc,rc);
+        mi[u]=mi[lc]; mic[u]=mic[lc];
+        se[u]=min(mi[rc],se[lc]);
+    } return;
+}
+
+inline void build(int u,int l,int r) {
+    if(l==r) {
+        mi[u]=0; se[u]=1e9+1; mic[u]=1;
+        sum[u]=mi[u]; tag[u]=-1;
+        return;
+    } int mid=(l+r)>>1;
+    build(u<<1,l,mid);
+    build(u<<1|1,mid+1,r);
+    tag[u]=-1; upt(u);
+}
+
+inline void color(int u,int l,int r,int v) {
+    if(tag[u]!=-1 && tag[u]>=v) return;
+    if(mi[u]>=v) return;
+    else if(se[u]>v) {
+        tag[u]=v;
+        sum[u]+=(ll)mic[u]*(v-mi[u]);
+        mi[u]=v;
+        return;
+    } else {
+        tag[u]=-1; int mid=(l+r)>>1;
+        color(u<<1,l,mid,v);
+        color(u<<1|1,mid+1,r,v);
+        upt(u);
+    }
+
+}
+
+inline void pushdown(int u,int l,int r) {
+    int mid=(l+r)>>1;
+    color(u<<1,l,mid,tag[u]);
+    color(u<<1|1,mid+1,r,tag[u]);
+    tag[u]=-1;
+}
+
+inline void modify(int u,int l,int r,int L,int R,int v) {
+    if(L<=l&&r<=R) {color(u,l,r,v); return;}
+    if(tag[u]!=-1) pushdown(u,l,r);
+    int mid=(l+r)>>1;
+    if(R<=mid) modify(u<<1,l,mid,L,R,v);
+    else if(L>mid) modify(u<<1|1,mid+1,r,L,R,v);
+    else modify(u<<1,l,mid,L,R,v),modify(u<<1|1,mid+1,r,L,R,v);
+    upt(u);
+}
+
+
+inline ll query(int u,int l,int r,int L,int R) {
+    if(L<=l&&r<=R) {return sum[u];}
+    if(tag[u]!=-1) pushdown(u,l,r);
+    int mid=(l+r)>>1;
+    if(R<=mid) return query(u<<1,l,mid,L,R);
+    else if(L>mid) return query(u<<1|1,mid+1,r,L,R);
+    else return query(u<<1,l,mid,L,R)+query(u<<1|1,mid+1,r,L,R);
+}
+
+
