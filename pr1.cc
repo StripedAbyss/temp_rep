@@ -231,12 +231,12 @@ class PageRank : public Job {
         }));
 
         rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(
-            lpr_ptr->SharedDataMapPartitionWith(rank_ptr.get(), [](const DatasetPartition<std::pair<int, double>>& data, const DatasetPartition<std::pair<int, double>>& rank) { //17
+            rank_ptr->MapPartitionWith(lpr_ptr.get(), [](const DatasetPartition<std::pair<int, double>>& data, const DatasetPartition<std::pair<int, double>>& lpr) { //17
                 DatasetPartition<std::pair<int, double>> ret;
                 ret.reserve(data.size());
                 int local_id = 0;
                 for (auto& v : data) {
-                    ret.push_back(std::make_pair(v.first, v.second * rank.at(local_id).second));
+                    ret.push_back(std::make_pair(v.first, v.second * lpr.at(local_id).second));
                     ++local_id;
                 }
                 return ret;
