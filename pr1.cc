@@ -242,6 +242,13 @@ class PageRank : public Job {
                 return ret;
         }));
 
+        graph.UpdatePartition([block_size](DatasetPartition<Vertex>& data) {
+            //
+            for (int local_id = 0; local_id < data.size(); ++local_id) {
+                data.at(local_id).SetBid(0);
+            }
+        });
+
         // main loop
         for (int iter = 0; iter < n_iters; ++iter) {
             rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(
