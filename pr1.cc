@@ -100,7 +100,7 @@ class PageRank : public Job {
 
         graph.UpdatePartition([block_size](DatasetPartition<Vertex>& data) {
             std::sort(data.begin(), data.end(), [](const Vertex& a, const Vertex& b) { return a.GetId() < b.GetId(); });
-            // initialize block id
+            //
             for (int local_id = 0; local_id < data.size(); ++local_id) {
                 data.at(local_id).SetBid(local_id / block_size);
             }
@@ -220,7 +220,7 @@ class PageRank : public Job {
         }
 
         // initialize ranks
-        auto rank = axe::common::Dataset<std::pair<int, double>>(
+        auto rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(
             graph.SharedDataMapPartitionWith(br_ptr.get(), [](const DatasetPartition<Vertex>& data, const DatasetPartition<std::pair<int, double>>& br) {
                 DatasetPartition<std::pair<int, double>> ret;
                 ret.reserve(data.size());
@@ -230,8 +230,8 @@ class PageRank : public Job {
                 return ret;
         }));
 
-        rank = axe::common::Dataset<std::pair<int, double>>(
-            rank.SharedDataMapPartitionWith(lpr_ptr.get(), [](const DatasetPartition<std::pair<int, double>>& data, const DatasetPartition<std::pair<int, double>>& lpr) {
+        rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(
+            rank_ptr->SharedDataMapPartitionWith(lpr_ptr.get(), [](const DatasetPartition<std::pair<int, double>>& data, const DatasetPartition<std::pair<int, double>>& lpr) {
                 DatasetPartition<std::pair<int, double>> ret;
                 ret.reserve(data.size());
                 int local_id = 0;
@@ -242,17 +242,10 @@ class PageRank : public Job {
                 return ret;
         }));
 
-        graph.UpdatePartition([block_size](DatasetPartition<Vertex>& data) {
-            // set all block id to 0
-            for (int local_id = 0; local_id < data.size(); ++local_id) {
-                data.at(local_id).SetBid(0);
-            }
-        });
-
         // main loop
         for (int iter = 0; iter < n_iters; ++iter) {
-            rank = axe::common::Dataset<std::pair<int, double>>(
-                graph.SharedDataMapPartitionWith(&rank, send_updates)
+            rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(
+                graph.SharedDataMapPartitionWith(rank_ptr.get(), send_updates)
                     .ReduceBy([](const std::pair<int, double>& id_rank) { return id_rank.first; },
                                 [](std::pair<int, double>& agg, const std::pair<int, double>& update) { agg.second += update.second; }, n_partitions));
         }
@@ -280,7 +273,7 @@ class PageRank : public Job {
             return ret;
         };
 
-        rank.MapPartition(select_top10)
+        rank_ptr->MapPartition(select_top10)
             .PartitionBy([](const std::pair<int, double>&) { return 0; }, 1)
             .MapPartition(select_top10)
             .ApplyRead([](const DatasetPartition<std::pair<int, double>>& data) {
@@ -294,6 +287,6 @@ class PageRank : public Job {
 };
 
 int main(int argc, char** argv) {
-    axe::common::JobDriver::Run(argc, argv, PageRank());
-    return 0;
+  axe::common::JobDriver::Run(argc, argv, PageRank());
+  return 0;
 }
