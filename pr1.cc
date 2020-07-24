@@ -221,7 +221,7 @@ class PageRank : public Job {
 
         // initialize ranks
         auto rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(
-            graph.MapPartitionWith(br_ptr.get(), [](const DatasetPartition<Vertex>& data, const DatasetPartition<std::pair<int, double>>& br) { //16
+            graph.SharedDataMapPartitionWith(br_ptr.get(), [](const DatasetPartition<Vertex>& data, const DatasetPartition<std::pair<int, double>>& br) { //16
                 DatasetPartition<std::pair<int, double>> ret;
                 ret.reserve(data.size());
                 for (const Vertex& v : data) {
@@ -231,19 +231,19 @@ class PageRank : public Job {
         }));
 
         rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(
-            rank_ptr->MapPartitionWith(lpr_ptr.get(), [](const DatasetPartition<std::pair<int, double>>& data, const DatasetPartition<std::pair<int, double>>& lpr) { //17
+            lpr_ptr->SharedDataMapPartitionWith(rank_ptr.get(), [](const DatasetPartition<std::pair<int, double>>& data, const DatasetPartition<std::pair<int, double>>& rank) { //17
                 DatasetPartition<std::pair<int, double>> ret;
                 ret.reserve(data.size());
                 int local_id = 0;
                 for (auto& v : data) {
-                    ret.push_back(std::make_pair(v.first, v.second * lpr.at(local_id).second));
+                    ret.push_back(std::make_pair(v.first, v.second * rank.at(local_id).second));
                     ++local_id;
                 }
                 return ret;
         }));
 
         graph.UpdatePartition([](DatasetPartition<Vertex>& data) { //18
-            //
+            // reset block id
             for (int local_id = 0; local_id < data.size(); ++local_id) {
                 data.at(local_id).SetBid(0);
             }
@@ -252,7 +252,7 @@ class PageRank : public Job {
         // main loop
         for (int iter = 0; iter < n_iters; ++iter) {
             rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(
-                graph.SharedDataMapPartitionWith(rank_ptr.get(), send_updates) //19
+                graph.MapPartitionWith(rank_ptr.get(), send_updates) //19
                     .ReduceBy([](const std::pair<int, double>& id_rank) { return id_rank.first; },
                                 [](std::pair<int, double>& agg, const std::pair<int, double>& update) { agg.second += update.second; }, n_partitions));
         }
