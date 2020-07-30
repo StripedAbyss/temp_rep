@@ -282,11 +282,14 @@ class PageRank : public Job {
                 return ret;
         }));
 
-        graph.UpdatePartition([](DatasetPartition<Vertex>& data) { //18
+        graph = graph.MapPartition([](const DatasetPartition<Vertex>& data) { //18
             // reset block id
-            for (int local_id = 0; local_id < data.size(); ++local_id) { 
-                data.at(local_id).SetBid(0);
+            DatasetPartition<Vertex> ret;
+            for(auto &v: data){
+                ret.push_back(v);
+                ret.back().SetBid(0);
             }
+            return ret;
         });
 
         // main loop
