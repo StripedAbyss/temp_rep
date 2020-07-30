@@ -106,7 +106,7 @@ class PageRank : public Job {
                 data.at(local_id).SetBid(block_id);
             }
         });
-        
+
         auto send_updates = [](const DatasetPartition<Vertex>& data, const DatasetPartition<std::pair<int, double>>& rank) {
             DatasetPartition<std::pair<int, double>> updates;
             int local_id = 0;
@@ -280,7 +280,7 @@ class PageRank : public Job {
                 return ret;
         }));
 
-        graph = graph.MapPartition([](const DatasetPartition<Vertex>& data) { //18
+        auto graph1 = graph.MapPartition([](const DatasetPartition<Vertex>& data) { //18
             // reset block id
             DatasetPartition<Vertex> ret;
             for(auto &v: data){
@@ -293,7 +293,7 @@ class PageRank : public Job {
         // main loop
         for (int iter = 0; iter < n_iters; ++iter) {
             rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(
-                graph.SharedDataMapPartitionWith(rank_ptr.get(), send_updates) //19
+                graph1.SharedDataMapPartitionWith(rank_ptr.get(), send_updates) //19
                     .ReduceBy([](const std::pair<int, double>& id_rank) { return id_rank.first; },
                                 [](std::pair<int, double>& agg, const std::pair<int, double>& update) { agg.second += update.second; }, n_partitions));
         }
