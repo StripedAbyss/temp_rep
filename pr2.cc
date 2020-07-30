@@ -96,7 +96,7 @@ class PageRank : public Job {
                             }
                             return ret * 2;
                         })
-                    .PartitionBy([](const Vertex& v) { return v.GetBid(); }, n_partitions);
+                    .PartitionBy([](const Vertex& v) { return v.GetId(); }, n_partitions);
         
         graph.UpdatePartition([block_size](DatasetPartition<Vertex>& data) {
             std::sort(data.begin(), data.end(), [](const Vertex& a, const Vertex& b) { return a.GetId() < b.GetId(); });
@@ -106,8 +106,6 @@ class PageRank : public Job {
                 data.at(local_id).SetBid(block_id);
             }
         });
-
-        graph.PartitionBy([](const Vertex& v) { return v.GetBid(); }, n_partitions);
         
         auto send_updates = [](const DatasetPartition<Vertex>& data, const DatasetPartition<std::pair<int, double>>& rank) {
             DatasetPartition<std::pair<int, double>> updates;
