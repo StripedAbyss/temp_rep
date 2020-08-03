@@ -293,11 +293,15 @@ class PageRank : public Job {
                 ret.reserve(data.size());
                 int local_id = 0;
                 for (auto& v : data) {
-                    if(br.at(local_id).first > v.first){
+                    if (local_id >= br.size()){
+                        break;
+                    }
+                    if (br.at(local_id).first > v.first){
                         continue;
                     }
                     DCHECK_EQ(br.at(local_id).first, v.first);
                     ret.push_back(std::make_pair(v.first, v.second * br.at(local_id).second));
+                    ++local_id;
                 }
                 return ret;
         }));
