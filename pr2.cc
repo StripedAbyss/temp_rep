@@ -171,7 +171,7 @@ class PageRank : public Job {
         });
 
         block_edges = std::make_shared<axe::common::Dataset<std::pair<int, int>>>(
-            block_edges->SharedDataMapPartitionWith(&graph, [](const DatasetPartition<std::pair<int, int>>& data, const DatasetPartition<Vertex>& graph) {
+            graph.SharedDataMapPartitionWith(block_edges.get(), [](const DatasetPartition<Vertex>& graph, const DatasetPartition<std::pair<int, int>>& data) {
                 //
                 DatasetPartition<std::pair<int, int>> ret;
                 int local_id = 0;
