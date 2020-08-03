@@ -102,7 +102,7 @@ class PageRank : public Job {
             std::sort(data.begin(), data.end(), [](const Vertex& a, const Vertex& b) { return a.GetId() < b.GetId(); });
             //
             for (int local_id = 0; local_id < data.size(); ++local_id) {
-                int block_id = data.at(local_id / block_size).GetId();
+                int block_id = data.at(local_id / block_size * block_size).GetId();
                 data.at(local_id).SetBid(block_id);
             }
         });
@@ -277,7 +277,7 @@ class PageRank : public Job {
                     while (local_id < br.size() && v.GetBid() > br.at(local_id).first){
                         ++local_id;
                     }
-                    if (v.GetBid() == br.at(local_id).first){
+                    if (local_id < br.size() && v.GetBid() == br.at(local_id).first){
                         ret.push_back(std::make_pair(v.GetId(), br.at(local_id).second));
                     }
                     else{
