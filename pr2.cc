@@ -107,7 +107,7 @@ class PageRank : public Job {
             }
         });
 
-        auto send_updates_blocks = [](const DatasetPartition<Vertex>& data, const DatasetPartition<std::pair<int, double>>& rank) {
+        auto send_updates_local = [](const DatasetPartition<Vertex>& data, const DatasetPartition<std::pair<int, double>>& rank) {
             DatasetPartition<std::pair<int, double>> updates;
             int local_id = 0;
             for (const Vertex& v : data) {
@@ -160,7 +160,7 @@ class PageRank : public Job {
 
         for (int iter = 0; iter < n_iters; ++iter) {
             rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>( 
-                graph.SharedDataMapPartitionWith(rank_ptr.get(), send_updates_blocks) //
+                graph.SharedDataMapPartitionWith(rank_ptr.get(), send_updates_local) //
                     .ReduceBy([](const std::pair<int, double>& id_rank) { return id_rank.first; },
                                 [](std::pair<int, double>& agg, const std::pair<int, double>& update) { agg.second += update.second; }, n_partitions));
         }
@@ -288,13 +288,16 @@ class PageRank : public Job {
         }));
 
         rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(
-            rank_ptr->MapPartitionWith(br_ptr.get(), [](const DatasetPartition<std::pair<int, double>>& data, const DatasetPartition<std::pair<int, double>>& lpr) { //17
+            rank_ptr->MapPartitionWith(br_ptr.get(), [](const DatasetPartition<std::pair<int, double>>& data, const DatasetPartition<std::pair<int, double>>& br) { //17
                 DatasetPartition<std::pair<int, double>> ret;
                 ret.reserve(data.size());
                 int local_id = 0;
                 for (auto& v : data) {
-                    ret.push_back(std::make_pair(v.first, v.second * lpr.at(local_id).second));
-                    ++local_id;
+                    if(br.at(local_id).first > v.first){
+                        continue;
+                    }
+                    DCHECK_EQ(br.at(local_id).first, v.first);
+                    ret.push_back(std::make_pair(v.first, v.second * br.at(local_id).second));
                 }
                 return ret;
         }));
