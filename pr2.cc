@@ -171,7 +171,7 @@ class PageRank : public Job {
         });
 
         block_edges = std::make_shared<axe::common::Dataset<std::pair<int, int>>>(
-            block_edges->MapPartitionWith(&graph, [](const DatasetPartition<std::pair<int, int>>& data, const DatasetPartition<Vertex>& graph) {
+            block_edges->SharedDataMapPartitionWith(&graph, [](const DatasetPartition<std::pair<int, int>>& data, const DatasetPartition<Vertex>& graph) {
                 //
                 DatasetPartition<std::pair<int, int>> ret;
                 int local_id = 0;
@@ -188,8 +188,7 @@ class PageRank : public Job {
 
                 }
                 return ret;
-        })
-        .PartitionBy([](const std::pair<int, int>& v) { return v.first; }, n_partitions));
+        }));
 
         block_edges->UpdatePartition([](DatasetPartition<std::pair<int, int>>& data){
             std::sort(data.begin(), data.end());
