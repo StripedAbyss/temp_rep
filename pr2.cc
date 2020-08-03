@@ -230,7 +230,8 @@ class PageRank : public Job {
             }
 
             return ret;
-        }));
+        })
+        .PartitionBy([](const Vertex& v) { return v.GetId(); }, n_partitions));
 
         // initialize br
         auto br_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(bgraph.MapPartition([](const DatasetPartition<Vertex>& data) { //11
