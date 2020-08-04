@@ -33,6 +33,7 @@ class Vertex {
     const std::shared_ptr<std::vector<std::pair<int,int>>>& GetAdjList() const { return adj_; }
 
     void SetBid(int bid) { bid_ = bid; }
+    void SetSum(int sum) { sum_ = sum; }
 
 
     double GetMemory() const {
@@ -219,14 +220,18 @@ class PageRank : public Job {
             Vertex block_v(0);
             int last_bid = -1;
             int current_block = -1;
+            int current_sum = 0;
             int current_count = 0;
             for (auto& v : data) {
                 if (v.first != last_bid){
                     if (current_count > 0){
                         block_v.GetAdjList()->push_back(std::make_pair(current_block, current_count));
+                        current_sum += current_count;
                         current_count = 0;
+                        block_v.SetSum(current_sum);
+                        current_sum = 0;
+                        ret.push_back(block_v);
                     }
-                    ret.push_back(block_v);
                     block_v = Vertex(v.first);
                     current_block = v.second;
                     current_count = 0;
@@ -234,6 +239,7 @@ class PageRank : public Job {
                 else if (v.second != current_block){
                     if (current_count > 0){
                         block_v.GetAdjList()->push_back(std::make_pair(current_block, current_count));
+                        current_sum += current_count;
                         current_count = 0;
                     }
                 }
@@ -243,8 +249,10 @@ class PageRank : public Job {
             if(last_bid != -1){
                 if (current_count > 0){
                     block_v.GetAdjList()->push_back(std::make_pair(current_block, current_count));
+                    current_sum += current_count;
+                    block_v.SetSum(current_sum);
+                    ret.push_back(block_v);
                 }
-                ret.push_back(block_v);
             }
 
             return ret;
