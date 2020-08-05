@@ -214,6 +214,14 @@ class PageRank : public Job {
             std::sort(data.begin(), data.end());
         });
 
+        block_edges->PartitionBy([](const std::pair<int, int>&) { return 0; }, 1)
+            .ApplyRead([](const DatasetPartition<std::pair<int, int>>& data) {
+                for (auto& rank : data) {
+                    LOG(INFO) << "id: " << rank.first << ", rank: " << rank.second;
+                }
+                google::FlushLogFiles(google::INFO);
+            });
+        /*
         // initialize block graph
         auto bgraph = axe::common::Dataset<Vertex>(block_edges->MapPartition([](const DatasetPartition<std::pair<int, int>>& data) { //
             DatasetPartition<Vertex> ret;
@@ -268,21 +276,13 @@ class PageRank : public Job {
             }
             return ret;
         }));
-        /*
         for (int iter = 0; iter < n_iters; ++iter) {
             br_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(      
                 bgraph.SharedDataMapPartitionWith(br_ptr.get(), send_updates)
                     .ReduceBy([](const std::pair<int, double>& id_rank) { return id_rank.first; }, //12
                                 [](std::pair<int, double>& agg, const std::pair<int, double>& update) { agg.second += update.second; }, n_partitions));
         }
-        */
 
-        bgraph.PartitionBy([](const Vertex&) { return 0; }, 1)
-            .ApplyRead([](const DatasetPartition<Vertex>& data) {
-                LOG(INFO) << "size: " << data.size();
-                google::FlushLogFiles(google::INFO);
-            });
-        /*
         br_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(
             graph.SharedDataMapPartitionWith(br_ptr.get(), [](const DatasetPartition<Vertex>& data, const DatasetPartition<std::pair<int, double>>& br) { //16
                 DatasetPartition<std::pair<int, double>> ret;
