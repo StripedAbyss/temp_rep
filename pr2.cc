@@ -268,16 +268,16 @@ class PageRank : public Job {
             }
             return ret;
         }));
-
+        /*
         for (int iter = 0; iter < n_iters; ++iter) {
             br_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(      
                 bgraph.SharedDataMapPartitionWith(br_ptr.get(), send_updates)
                     .ReduceBy([](const std::pair<int, double>& id_rank) { return id_rank.first; }, //12
                                 [](std::pair<int, double>& agg, const std::pair<int, double>& update) { agg.second += update.second; }, n_partitions));
         }
+        */
 
-        br_ptr->PartitionBy([](const std::pair<int, double>&) { return 0; }, 1)
-            .ApplyRead([](const DatasetPartition<std::pair<int, double>>& data) {
+        br_ptr->ApplyRead([](const DatasetPartition<std::pair<int, double>>& data) {
                 LOG(INFO) << "size: " << data.size();
                 google::FlushLogFiles(google::INFO);
             });
