@@ -277,7 +277,7 @@ class PageRank : public Job {
         }
         */
 
-        br_ptr->PartitionBy([](const std::pair<int, double>&) { return 0; }, 1)
+        bgraph.PartitionBy([](const Vertex&) { return 0; }, 1)
             .ApplyRead([](const DatasetPartition<std::pair<int, double>>& data) {
                 LOG(INFO) << "size: " << data.size();
                 google::FlushLogFiles(google::INFO);
