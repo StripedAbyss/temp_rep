@@ -276,6 +276,12 @@ class PageRank : public Job {
                                 [](std::pair<int, double>& agg, const std::pair<int, double>& update) { agg.second += update.second; }, n_partitions));
         }
 
+        br_ptr->PartitionBy([](const std::pair<int, double>&) { return 0; }, 1)
+            .ApplyRead([](const DatasetPartition<std::pair<int, double>>& data) {
+                LOG(INFO) << "size: " << data.size();
+                google::FlushLogFiles(google::INFO);
+            });
+        /*
         br_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(
             graph.SharedDataMapPartitionWith(br_ptr.get(), [](const DatasetPartition<Vertex>& data, const DatasetPartition<std::pair<int, double>>& br) { //16
                 DatasetPartition<std::pair<int, double>> ret;
@@ -354,6 +360,7 @@ class PageRank : public Job {
                 }
                 google::FlushLogFiles(google::INFO);
             });
+        */
         axe::common::JobDriver::ReversePrintTaskGraph(*tg);
     }
 };
