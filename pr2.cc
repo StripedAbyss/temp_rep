@@ -117,6 +117,9 @@ class PageRank : public Job {
                     ++local_id;
                 }
                 DCHECK_EQ(rank.at(local_id).first, v.GetId());
+                if (v.GetSum() == 0){
+                    continue;
+                }
                 double distribute = rank.at(local_id).second / v.GetSum() * 0.8;
                 updates.push_back(std::make_pair(v.GetId(), 0.2));
                 for (auto neighbor : *v.GetAdjList()) {
@@ -139,6 +142,9 @@ class PageRank : public Job {
                     ++local_id;
                 }
                 DCHECK_EQ(rank.at(local_id).first, v.GetId());
+                if (v.GetSum() == 0){
+                    continue;
+                }
                 double distribute = rank.at(local_id).second / v.GetSum() * 0.8;
                 updates.push_back(std::make_pair(v.GetId(), 0.2));
                 for (auto neighbor : *v.GetAdjList()) {
@@ -148,7 +154,6 @@ class PageRank : public Job {
             }
             return updates;
         };
-        /*
         // initialize lpr
         auto rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(graph.MapPartition([](const DatasetPartition<Vertex>& data) { //
             DatasetPartition<std::pair<int, double>> ret;
@@ -165,7 +170,6 @@ class PageRank : public Job {
                     .ReduceBy([](const std::pair<int, double>& id_rank) { return id_rank.first; },
                                 [](std::pair<int, double>& agg, const std::pair<int, double>& update) { agg.second += update.second; }, n_partitions));
         }
-        */
         auto block_edges = std::make_shared<axe::common::Dataset<std::pair<int, int>>>(graph.MapPartition([](const DatasetPartition<Vertex>& data) { //
             DatasetPartition<std::pair<int, int>> ret;
             size_t reserve_size = 0;
@@ -182,7 +186,7 @@ class PageRank : public Job {
             return ret;
         })
         .PartitionBy([](const std::pair<int, int>& v) { return v.second; }, n_partitions));
-
+        
         block_edges->UpdatePartition([](DatasetPartition<std::pair<int, int>>& data){
             for (auto &v : data){
                 std::swap(v.first, v.second);
@@ -213,7 +217,7 @@ class PageRank : public Job {
         block_edges->UpdatePartition([](DatasetPartition<std::pair<int, int>>& data){
             std::sort(data.begin(), data.end());
         });
-
+/*
         block_edges->PartitionBy([](const std::pair<int, int>&) { return 0; }, 1)
             .ApplyRead([](const DatasetPartition<std::pair<int, int>>& data) {
                 for (auto& rank : data) {
@@ -221,7 +225,7 @@ class PageRank : public Job {
                 }
                 google::FlushLogFiles(google::INFO);
             });
-        /*
+        
         // initialize block graph
         auto bgraph = axe::common::Dataset<Vertex>(block_edges->MapPartition([](const DatasetPartition<std::pair<int, int>>& data) { //
             DatasetPartition<Vertex> ret;
