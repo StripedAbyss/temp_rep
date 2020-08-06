@@ -101,7 +101,7 @@ class PageRank : public Job {
         
         graph.UpdatePartition([block_size](DatasetPartition<Vertex>& data) {
             std::sort(data.begin(), data.end(), [](const Vertex& a, const Vertex& b) { return a.GetId() < b.GetId(); });
-            //
+            // block partition by local id
             for (int local_id = 0; local_id < data.size(); ++local_id) {
                 int block_id = data.at(local_id / block_size * block_size).GetId();
                 data.at(local_id).SetBid(block_id);
@@ -154,7 +154,7 @@ class PageRank : public Job {
             }
             return updates;
         };
-        // initialize lpr
+        // initialize local pagerank
         auto rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(graph.MapPartition([](const DatasetPartition<Vertex>& data) { //
             DatasetPartition<std::pair<int, double>> ret;
             ret.reserve(data.size());
@@ -170,6 +170,8 @@ class PageRank : public Job {
                     .ReduceBy([](const std::pair<int, double>& id_rank) { return id_rank.first; },
                                 [](std::pair<int, double>& agg, const std::pair<int, double>& update) { agg.second += update.second; }, n_partitions));
         }
+
+        // initialze block graph
         auto block_edges = std::make_shared<axe::common::Dataset<std::pair<int, int>>>(graph.MapPartition([](const DatasetPartition<Vertex>& data) { //
             DatasetPartition<std::pair<int, int>> ret;
             size_t reserve_size = 0;
@@ -261,7 +263,7 @@ class PageRank : public Job {
         })
         .PartitionBy([](const Vertex& v) { return v.GetId(); }, n_partitions));
 
-        // initialize br
+        // initialize block pagerank
         auto br_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(bgraph.MapPartition([](const DatasetPartition<Vertex>& data) { //11
             DatasetPartition<std::pair<int, double>> ret;
             ret.reserve(data.size());
