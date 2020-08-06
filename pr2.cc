@@ -148,7 +148,7 @@ class PageRank : public Job {
             }
             return updates;
         };
-
+        /*
         // initialize lpr
         auto rank_ptr = std::make_shared<axe::common::Dataset<std::pair<int, double>>>(graph.MapPartition([](const DatasetPartition<Vertex>& data) { //
             DatasetPartition<std::pair<int, double>> ret;
@@ -165,7 +165,7 @@ class PageRank : public Job {
                     .ReduceBy([](const std::pair<int, double>& id_rank) { return id_rank.first; },
                                 [](std::pair<int, double>& agg, const std::pair<int, double>& update) { agg.second += update.second; }, n_partitions));
         }
-
+        */
         auto block_edges = std::make_shared<axe::common::Dataset<std::pair<int, int>>>(graph.MapPartition([](const DatasetPartition<Vertex>& data) { //
             DatasetPartition<std::pair<int, int>> ret;
             size_t reserve_size = 0;
