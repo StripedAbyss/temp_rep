@@ -217,14 +217,6 @@ class PageRank : public Job {
         block_edges->UpdatePartition([](DatasetPartition<std::pair<int, int>>& data){
             std::sort(data.begin(), data.end());
         });
-/*
-        block_edges->PartitionBy([](const std::pair<int, int>&) { return 0; }, 1)
-            .ApplyRead([](const DatasetPartition<std::pair<int, int>>& data) {
-                for (auto& rank : data) {
-                    LOG(INFO) << "id: " << rank.first << ", rank: " << rank.second;
-                }
-                google::FlushLogFiles(google::INFO);
-            });
         
         // initialize block graph
         auto bgraph = axe::common::Dataset<Vertex>(block_edges->MapPartition([](const DatasetPartition<std::pair<int, int>>& data) { //
@@ -365,7 +357,6 @@ class PageRank : public Job {
                 }
                 google::FlushLogFiles(google::INFO);
             });
-        */
         axe::common::JobDriver::ReversePrintTaskGraph(*tg);
     }
 };
