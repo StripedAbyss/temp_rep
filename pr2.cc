@@ -179,18 +179,14 @@ class PageRank : public Job {
             ret.reserve(reserve_size);
             for (auto& v : data) {
                 for (auto neighbor : *v.GetAdjList()) {
-                    if(v.GetBid() != neighbor.first)
-                        ret.push_back(std::make_pair(v.GetBid(), neighbor.first));
+                    ret.push_back(std::make_pair(neighbor.first, v.GetBid()));
                 }
             }
             return ret;
         })
-        .PartitionBy([](const std::pair<int, int>& v) { return v.second; }, n_partitions));
+        .PartitionBy([](const std::pair<int, int>& v) { return v.first; }, n_partitions));
         
         block_edges->UpdatePartition([](DatasetPartition<std::pair<int, int>>& data){
-            for (auto &v : data){
-                std::swap(v.first, v.second);
-            }
             std::sort(data.begin(), data.end());
         });
 
@@ -212,7 +208,8 @@ class PageRank : public Job {
 
                 }
                 return ret;
-        }));
+        })
+        .PartitionBy([](const std::pair<int, int>& v) { return v.first; }, n_partitions));
 
         block_edges->UpdatePartition([](DatasetPartition<std::pair<int, int>>& data){
             std::sort(data.begin(), data.end());
@@ -245,6 +242,7 @@ class PageRank : public Job {
                         block_v.GetAdjList()->push_back(std::make_pair(current_block, current_count));
                         current_sum += current_count;
                         current_count = 0;
+                        current_block = v.second;
                     }
                 }
                 ++current_count;
